@@ -4,9 +4,17 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>내 앱 런처</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#d6402b">
+<link rel="icon" type="image/png" href="icons/favicon-32.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="앱 런처">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root{
+  --fs:1;--font:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
   --bg:#f4f5f7;--card:#fff;--text:#1d2129;--sub:#6b7280;--line:#e3e6ea;
   --accent:#d6402b;--accent-soft:#fdecea;--chip:#eef0f3;--shadow:0 1px 3px rgba(0,0,0,.06);
 }
@@ -15,49 +23,49 @@
   --accent:#ff6b55;--accent-soft:#3a2420;--chip:#2a2e35;--shadow:none;
 }
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Pretendard","Apple SD Gothic Neo","Malgun Gothic",sans-serif;-webkit-font-smoothing:antialiased}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font);-webkit-font-smoothing:antialiased}
 button{font:inherit;color:inherit;cursor:pointer}
 .wrap{max-width:860px;margin:0 auto;padding:16px 14px 90px}
 header{display:flex;align-items:center;gap:10px;margin-bottom:14px}
-header h1{font-size:20px;margin:0;flex:1;letter-spacing:-.3px}
-header h1 small{display:block;font-size:12px;color:var(--sub);font-weight:500;margin-top:2px}
-.icon-btn{border:1px solid var(--line);background:var(--card);border-radius:10px;width:38px;height:38px;display:grid;place-items:center;font-size:17px}
+header h1{font-size:calc(20px*var(--fs));margin:0;flex:1;letter-spacing:-.3px}
+header h1 small{display:block;font-size:calc(12px*var(--fs));color:var(--sub);font-weight:500;margin-top:2px}
+.icon-btn{border:1px solid var(--line);background:var(--card);border-radius:10px;width:38px;height:38px;display:grid;place-items:center;font-size:calc(17px*var(--fs))}
 .search{position:relative;margin-bottom:10px}
-.search input{width:100%;padding:12px 14px 12px 38px;border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--text);font-size:15px;outline:none}
+.search input{width:100%;padding:12px 14px 12px 38px;border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--text);font-size:calc(15px*var(--fs));outline:none}
 .search input:focus{border-color:var(--accent)}
 .search span{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--sub)}
 .chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:14px;scrollbar-width:none}
 .chips::-webkit-scrollbar{display:none}
-.chip{flex:none;border:none;background:var(--chip);padding:7px 13px;border-radius:999px;font-size:13px;color:var(--sub);white-space:nowrap}
+.chip{flex:none;border:none;background:var(--chip);padding:7px 13px;border-radius:999px;font-size:calc(13px*var(--fs));color:var(--sub);white-space:nowrap}
 .chip.on{background:var(--accent);color:#fff}
-.section-title{font-size:13px;color:var(--sub);font-weight:600;margin:18px 2px 8px;display:flex;align-items:center;gap:6px}
+.section-title{font-size:calc(13px*var(--fs));color:var(--sub);font-weight:600;margin:18px 2px 8px;display:flex;align-items:center;gap:6px}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);display:flex;align-items:center;gap:12px;padding:12px;position:relative}
 .card a.main{display:flex;align-items:center;gap:12px;flex:1;min-width:0;text-decoration:none;color:inherit}
-.emoji{width:44px;height:44px;flex:none;border-radius:12px;background:var(--accent-soft);display:grid;place-items:center;font-size:22px}
+.emoji{width:44px;height:44px;flex:none;border-radius:12px;background:var(--accent-soft);display:grid;place-items:center;font-size:calc(22px*var(--fs))}
 .info{min-width:0;flex:1}
-.name{font-weight:650;font-size:15px;display:flex;align-items:center;gap:6px}
-.name .badge{font-size:10.5px;font-weight:600;padding:2px 6px;border-radius:6px;background:var(--chip);color:var(--sub)}
+.name{font-weight:650;font-size:calc(15px*var(--fs));display:flex;align-items:center;gap:6px}
+.name .badge{font-size:calc(10.5px*var(--fs));font-weight:600;padding:2px 6px;border-radius:6px;background:var(--chip);color:var(--sub)}
 .badge.dev{background:#fff4d6;color:#8a6100}
 [data-theme=dark] .badge.dev{background:#3b3216;color:#e6c25a}
-.desc{font-size:12.5px;color:var(--sub);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.url{font-size:11px;color:var(--sub);opacity:.75;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.desc{font-size:calc(12.5px*var(--fs));color:var(--sub);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.url{font-size:calc(11px*var(--fs));color:var(--sub);opacity:.75;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .acts{display:flex;flex-direction:column;gap:2px}
-.acts button{border:none;background:none;padding:4px 6px;border-radius:6px;font-size:15px;color:var(--sub)}
+.acts button{border:none;background:none;padding:4px 6px;border-radius:6px;font-size:calc(15px*var(--fs));color:var(--sub)}
 .acts button:hover{background:var(--chip)}
 .star.on{color:#f5b301}
-.empty{text-align:center;color:var(--sub);padding:40px 10px;font-size:14px}
-.fab{position:fixed;right:18px;bottom:22px;background:var(--accent);color:#fff;border:none;border-radius:999px;padding:14px 20px;font-size:15px;font-weight:600;box-shadow:0 4px 14px rgba(0,0,0,.2)}
+.empty{text-align:center;color:var(--sub);padding:40px 10px;font-size:calc(14px*var(--fs))}
+.fab{position:fixed;right:18px;bottom:22px;background:var(--accent);color:#fff;border:none;border-radius:999px;padding:14px 20px;font-size:calc(15px*var(--fs));font-weight:600;box-shadow:0 4px 14px rgba(0,0,0,.2)}
 /* modal */
 .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:flex-end;justify-content:center;z-index:20}
 .modal-bg.show{display:flex}
 .modal{background:var(--card);width:100%;max-width:520px;border-radius:18px 18px 0 0;padding:18px 16px 22px;max-height:92vh;overflow:auto}
 @media(min-width:600px){.modal-bg{align-items:center}.modal{border-radius:18px}}
-.modal h2{font-size:17px;margin:0 0 14px}
+.modal h2{font-size:calc(17px*var(--fs));margin:0 0 14px}
 .field{margin-bottom:11px}
-.field label{display:block;font-size:12.5px;color:var(--sub);margin-bottom:4px;font-weight:600}
-.field input,.field select,.field textarea{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--text);font-size:15px;outline:none;font-family:inherit}
-.field textarea{min-height:140px;font-size:12px;font-family:ui-monospace,Menlo,monospace}
+.field label{display:block;font-size:calc(12.5px*var(--fs));color:var(--sub);margin-bottom:4px;font-weight:600}
+.field input,.field select,.field textarea{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--text);font-size:calc(15px*var(--fs));outline:none;font-family:inherit}
+.field textarea{min-height:140px;font-size:calc(12px*var(--fs));font-family:ui-monospace,Menlo,monospace}
 .row{display:flex;gap:8px}
 .row .field{flex:1}
 .btns{display:flex;gap:8px;margin-top:14px}
@@ -65,18 +73,26 @@ header h1 small{display:block;font-size:12px;color:var(--sub);font-weight:500;ma
 .btns .primary{background:var(--accent);border-color:var(--accent);color:#fff}
 .btns .danger{color:#d33;flex:0 0 auto;padding:12px 16px}
 .emoji-pick{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
-.emoji-pick button{border:1px solid var(--line);background:var(--bg);border-radius:8px;width:34px;height:34px;font-size:17px}
-.menu-list button{display:block;width:100%;text-align:left;padding:13px 12px;border:none;background:none;border-bottom:1px solid var(--line);font-size:15px}
+.emoji-pick button{border:1px solid var(--line);background:var(--bg);border-radius:8px;width:34px;height:34px;font-size:calc(17px*var(--fs))}
+.menu-list button{display:block;width:100%;text-align:left;padding:13px 12px;border:none;background:none;border-bottom:1px solid var(--line);font-size:calc(15px*var(--fs))}
 .menu-list button:last-child{border-bottom:none}
-.toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%) translateY(20px);background:#222;color:#fff;padding:10px 16px;border-radius:10px;font-size:13.5px;opacity:0;transition:.25s;pointer-events:none;z-index:30}
+.toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%) translateY(20px);background:#222;color:#fff;padding:10px 16px;border-radius:10px;font-size:calc(13.5px*var(--fs));opacity:0;transition:.25s;pointer-events:none;z-index:30}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-.hint{font-size:12px;color:var(--sub);line-height:1.5;margin:4px 0 0}
+.hint{font-size:calc(12px*var(--fs));color:var(--sub);line-height:1.5;margin:4px 0 0}
 .sortmode .card{border-style:dashed}
 .sync-btn{position:relative}
 .dot{position:absolute;right:5px;bottom:5px;width:9px;height:9px;border-radius:50%;background:#b8bdc4;border:2px solid var(--card)}
 .dot.ok{background:#22a35a}.dot.busy{background:#f0a400}.dot.err{background:#e03b3b}
-.sync-state{background:var(--bg);border-radius:10px;padding:12px;font-size:14px;margin-bottom:12px;line-height:1.55}
+.sync-state{background:var(--bg);border-radius:10px;padding:12px;font-size:calc(14px*var(--fs));margin-bottom:12px;line-height:1.55}
 .sync-state b{font-weight:650}
+.seg{display:flex;background:var(--bg);border:1px solid var(--line);border-radius:11px;padding:3px;gap:3px}
+.seg button{flex:1;border:none;background:none;border-radius:8px;padding:9px 0;color:var(--sub);font-weight:600}
+.seg button.on{background:var(--card);color:var(--accent);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.font-list{display:flex;flex-direction:column;gap:6px;max-height:44vh;overflow:auto}
+.font-list button{display:flex;justify-content:space-between;align-items:center;text-align:left;border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:11px 12px;font-size:calc(16px*var(--fs))}
+.font-list button.on{border-color:var(--accent);background:var(--accent-soft)}
+.font-list small{font-size:calc(11px*var(--fs));color:var(--sub);font-family:-apple-system,sans-serif}
+.preview{border:1px dashed var(--line);border-radius:10px;padding:12px;margin:12px 0 4px}
 </style>
 </head>
 <body>
@@ -127,6 +143,8 @@ header h1 small{display:block;font-size:12px;color:var(--sub);font-weight:500;ma
   <div class="modal">
     <h2>메뉴</h2>
     <div class="menu-list">
+      <button id="mInstall">📲 앱으로 설치</button>
+      <button id="mFont">🔤 글자 크기·폰트</button>
       <button id="mExport">📤 백업 (JSON 복사/저장)</button>
       <button id="mImport">📥 복원 (JSON 붙여넣기)</button>
       <button id="mReset">↺ 기본 목록으로 초기화</button>
@@ -143,6 +161,31 @@ header h1 small{display:block;font-size:12px;color:var(--sub);font-weight:500;ma
     <div class="field"><textarea id="jsonBox" spellcheck="false"></textarea></div>
     <p class="hint" id="jsonHint"></p>
     <div class="btns" id="jsonBtns"></div>
+  </div>
+</div>
+
+<!-- install modal -->
+<div class="modal-bg" id="instBg">
+  <div class="modal">
+    <h2>📲 앱으로 설치</h2>
+    <div class="sync-state" id="instMsg"></div>
+    <div class="btns"><button id="instClose">닫기</button><button class="primary" id="instGo" style="display:none">지금 설치</button></div>
+  </div>
+</div>
+
+<!-- font modal -->
+<div class="modal-bg" id="fontBg">
+  <div class="modal">
+    <h2>🔤 글자 크기·폰트</h2>
+    <div class="field"><label>글자 크기</label>
+      <div class="seg" id="sizeSeg"></div>
+    </div>
+    <div class="field"><label>폰트</label>
+      <div class="font-list" id="fontList"></div>
+    </div>
+    <div class="preview"><div class="name" style="font-weight:650">🚒 소화전 점검 지도</div><div class="desc" style="white-space:normal">가나다라 ABC 123 — 미리보기</div></div>
+    <p class="hint">이 기기에만 적용됩니다.</p>
+    <div class="btns"><button id="fontReset">기본값</button><button class="primary" id="fontClose">완료</button></div>
   </div>
 </div>
 
@@ -355,6 +398,65 @@ $('mImport').onclick=()=>{
   open('jsonBg');setTimeout(()=>$('jsonBox').focus(),50);
 };
 $('mReset').onclick=()=>{close('menuBg');confirmBox('기본 목록으로 초기화할까요? 추가한 앱은 사라집니다.'+(user?' (동기화된 다른 기기에도 반영돼요)':''),()=>{apps=DEFAULTS.map((a,i)=>({...a,id:uid(),order:i}));save();render();toast('초기화했어요')})};
+
+/* ───────── 앱 설치(PWA) ───────── */
+let deferredPrompt=null;
+const standalone=()=>matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
+if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(()=>{});
+addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPrompt=e});
+addEventListener('appinstalled',()=>{deferredPrompt=null;toast('설치했어요')});
+$('mInstall').onclick=()=>{
+  close('menuBg');
+  const ua=navigator.userAgent, ios=/iPhone|iPad|iPod/.test(ua)||(/Macintosh/.test(ua)&&'ontouchend' in document);
+  let m;
+  if(standalone())m='이미 앱으로 실행 중이에요 ✅';
+  else if(deferredPrompt)m='아래 <b>지금 설치</b>를 누르면 홈 화면·바탕화면에 아이콘이 생기고, 주소창 없이 앱처럼 열립니다.';
+  else if(ios)m='<b>iPhone/iPad (Safari)</b><br>① 아래쪽 공유 버튼 <b>⬆︎</b><br>② <b>홈 화면에 추가</b><br>③ 오른쪽 위 <b>추가</b>';
+  else if(/Android/.test(ua))m='<b>Android</b><br>Chrome 오른쪽 위 <b>⋮</b> → <b>홈 화면에 추가</b> 또는 <b>앱 설치</b><br>(삼성 인터넷: 메뉴 ≡ → 현재 페이지 추가 → 홈 화면)';
+  else m='<b>PC (Chrome·Edge)</b><br>주소창 오른쪽 끝 <b>설치 아이콘(🖥️⬇)</b>을 누르거나,<br>Chrome: ⋮ → 전송·저장·공유 → <b>페이지를 앱으로 설치</b><br>Edge: … → 앱 → <b>이 사이트를 앱으로 설치</b><br>설치 후 시작 메뉴·바탕화면에 아이콘이 생깁니다.';
+  $('instMsg').innerHTML=m;$('instGo').style.display=deferredPrompt&&!standalone()?'':'none';
+  open('instBg');
+};
+$('instGo').onclick=async()=>{if(!deferredPrompt)return;deferredPrompt.prompt();const r=await deferredPrompt.userChoice;deferredPrompt=null;close('instBg');if(r.outcome==='accepted')toast('설치했어요')};
+$('instClose').onclick=()=>close('instBg');
+
+/* ───────── 글자 크기·폰트 ───────── */
+const FONT_KEY='rcn_applinks_font', SIZE_KEY='rcn_applinks_size';
+const SIZES=[['작게',0.9],['보통',1],['크게',1.12],['아주 크게',1.25]];
+const SYS='-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif';
+const FONTS=[
+  {id:'system',name:'시스템 기본',fam:SYS},
+  {id:'pretendard',name:'프리텐다드',fam:'"Pretendard Variable",Pretendard,'+SYS,css:'https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css'},
+  {id:'noto',name:'본고딕 (Noto Sans KR)',fam:'"Noto Sans KR",'+SYS,gf:'Noto+Sans+KR:wght@400;500;700'},
+  {id:'nanum',name:'나눔고딕',fam:'"Nanum Gothic",'+SYS,gf:'Nanum+Gothic:wght@400;700;800'},
+  {id:'plex',name:'IBM Plex Sans KR',fam:'"IBM Plex Sans KR",'+SYS,gf:'IBM+Plex+Sans+KR:wght@400;500;700'},
+  {id:'gowun',name:'고운돋움',fam:'"Gowun Dodum",'+SYS,gf:'Gowun+Dodum'},
+  {id:'myeongjo',name:'나눔명조',fam:'"Nanum Myeongjo",serif',gf:'Nanum+Myeongjo:wght@400;700;800'},
+  {id:'jua',name:'주아',fam:'Jua,'+SYS,gf:'Jua'},
+  {id:'dohyeon',name:'도현',fam:'"Do Hyeon",'+SYS,gf:'Do+Hyeon'}
+];
+const loadedCss={};
+function loadFontCss(f){
+  const href=f.css||(f.gf?`https://fonts.googleapis.com/css2?family=${f.gf}&display=swap`:'');
+  if(!href||loadedCss[href])return;
+  const l=document.createElement('link');l.rel='stylesheet';l.href=href;document.head.appendChild(l);loadedCss[href]=1;
+}
+function applyText(){
+  const size=parseFloat(ls(SIZE_KEY))||1, f=FONTS.find(x=>x.id===ls(FONT_KEY))||FONTS[0];
+  loadFontCss(f);
+  const r=document.documentElement.style;r.setProperty('--fs',size);r.setProperty('--font',f.fam);
+}
+function renderFont(){
+  const size=parseFloat(ls(SIZE_KEY))||1, cur=ls(FONT_KEY)||'system';
+  $('sizeSeg').innerHTML=SIZES.map(([n,v])=>`<button data-size="${v}" class="${v===size?'on':''}">${n}</button>`).join('');
+  $('fontList').innerHTML=FONTS.map(f=>`<button data-font="${f.id}" class="${f.id===cur?'on':''}" style="font-family:${esc(f.fam)}"><span>${f.name}</span><small>${f.id===cur?'✓ 사용 중':''}</small></button>`).join('');
+}
+$('mFont').onclick=()=>{close('menuBg');FONTS.forEach(loadFontCss);renderFont();open('fontBg')};
+$('sizeSeg').onclick=e=>{const b=e.target.closest('[data-size]');if(!b)return;ls(SIZE_KEY,b.dataset.size);applyText();renderFont()};
+$('fontList').onclick=e=>{const b=e.target.closest('[data-font]');if(!b)return;ls(FONT_KEY,b.dataset.font);applyText();renderFont()};
+$('fontReset').onclick=()=>{ls(SIZE_KEY,null);ls(FONT_KEY,null);applyText();renderFont()};
+$('fontClose').onclick=()=>close('fontBg');
+applyText();
 
 /* ───────── Supabase 동기화 ───────── */
 let sb=null, user=null, pushTimer=null, syncing=false, lastSync=0, syncErr='', otpEmail='';
