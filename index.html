@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>내 앱 런처</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  --bg:#f4f5f7;--card:#fff;--text:#1d2129;--sub:#6b7280;--line:#e3e6ea;
+  --accent:#d6402b;--accent-soft:#fdecea;--chip:#eef0f3;--shadow:0 1px 3px rgba(0,0,0,.06);
+}
+[data-theme=dark]{
+  --bg:#14161a;--card:#1e2127;--text:#e8eaed;--sub:#9aa0a8;--line:#2c3038;
+  --accent:#ff6b55;--accent-soft:#3a2420;--chip:#2a2e35;--shadow:none;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Pretendard","Apple SD Gothic Neo","Malgun Gothic",sans-serif;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;cursor:pointer}
+.wrap{max-width:860px;margin:0 auto;padding:16px 14px 90px}
+header{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+header h1{font-size:20px;margin:0;flex:1;letter-spacing:-.3px}
+header h1 small{display:block;font-size:12px;color:var(--sub);font-weight:500;margin-top:2px}
+.icon-btn{border:1px solid var(--line);background:var(--card);border-radius:10px;width:38px;height:38px;display:grid;place-items:center;font-size:17px}
+.search{position:relative;margin-bottom:10px}
+.search input{width:100%;padding:12px 14px 12px 38px;border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--text);font-size:15px;outline:none}
+.search input:focus{border-color:var(--accent)}
+.search span{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--sub)}
+.chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:14px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;border:none;background:var(--chip);padding:7px 13px;border-radius:999px;font-size:13px;color:var(--sub);white-space:nowrap}
+.chip.on{background:var(--accent);color:#fff}
+.section-title{font-size:13px;color:var(--sub);font-weight:600;margin:18px 2px 8px;display:flex;align-items:center;gap:6px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);display:flex;align-items:center;gap:12px;padding:12px;position:relative}
+.card a.main{display:flex;align-items:center;gap:12px;flex:1;min-width:0;text-decoration:none;color:inherit}
+.emoji{width:44px;height:44px;flex:none;border-radius:12px;background:var(--accent-soft);display:grid;place-items:center;font-size:22px}
+.info{min-width:0;flex:1}
+.name{font-weight:650;font-size:15px;display:flex;align-items:center;gap:6px}
+.name .badge{font-size:10.5px;font-weight:600;padding:2px 6px;border-radius:6px;background:var(--chip);color:var(--sub)}
+.badge.dev{background:#fff4d6;color:#8a6100}
+[data-theme=dark] .badge.dev{background:#3b3216;color:#e6c25a}
+.desc{font-size:12.5px;color:var(--sub);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.url{font-size:11px;color:var(--sub);opacity:.75;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.acts{display:flex;flex-direction:column;gap:2px}
+.acts button{border:none;background:none;padding:4px 6px;border-radius:6px;font-size:15px;color:var(--sub)}
+.acts button:hover{background:var(--chip)}
+.star.on{color:#f5b301}
+.empty{text-align:center;color:var(--sub);padding:40px 10px;font-size:14px}
+.fab{position:fixed;right:18px;bottom:22px;background:var(--accent);color:#fff;border:none;border-radius:999px;padding:14px 20px;font-size:15px;font-weight:600;box-shadow:0 4px 14px rgba(0,0,0,.2)}
+/* modal */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:flex-end;justify-content:center;z-index:20}
+.modal-bg.show{display:flex}
+.modal{background:var(--card);width:100%;max-width:520px;border-radius:18px 18px 0 0;padding:18px 16px 22px;max-height:92vh;overflow:auto}
+@media(min-width:600px){.modal-bg{align-items:center}.modal{border-radius:18px}}
+.modal h2{font-size:17px;margin:0 0 14px}
+.field{margin-bottom:11px}
+.field label{display:block;font-size:12.5px;color:var(--sub);margin-bottom:4px;font-weight:600}
+.field input,.field select,.field textarea{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--text);font-size:15px;outline:none;font-family:inherit}
+.field textarea{min-height:140px;font-size:12px;font-family:ui-monospace,Menlo,monospace}
+.row{display:flex;gap:8px}
+.row .field{flex:1}
+.btns{display:flex;gap:8px;margin-top:14px}
+.btns button{flex:1;padding:12px;border-radius:11px;border:1px solid var(--line);background:var(--bg);font-weight:600}
+.btns .primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btns .danger{color:#d33;flex:0 0 auto;padding:12px 16px}
+.emoji-pick{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.emoji-pick button{border:1px solid var(--line);background:var(--bg);border-radius:8px;width:34px;height:34px;font-size:17px}
+.menu-list button{display:block;width:100%;text-align:left;padding:13px 12px;border:none;background:none;border-bottom:1px solid var(--line);font-size:15px}
+.menu-list button:last-child{border-bottom:none}
+.toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%) translateY(20px);background:#222;color:#fff;padding:10px 16px;border-radius:10px;font-size:13.5px;opacity:0;transition:.25s;pointer-events:none;z-index:30}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.hint{font-size:12px;color:var(--sub);line-height:1.5;margin:4px 0 0}
+.sortmode .card{border-style:dashed}
+.sync-btn{position:relative}
+.dot{position:absolute;right:5px;bottom:5px;width:9px;height:9px;border-radius:50%;background:#b8bdc4;border:2px solid var(--card)}
+.dot.ok{background:#22a35a}.dot.busy{background:#f0a400}.dot.err{background:#e03b3b}
+.sync-state{background:var(--bg);border-radius:10px;padding:12px;font-size:14px;margin-bottom:12px;line-height:1.55}
+.sync-state b{font-weight:650}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>📱 내 앱 런처<small id="count"></small></h1>
+    <button class="icon-btn sync-btn" id="syncBtn" title="동기화">☁️<i class="dot" id="syncDot"></i></button>
+    <button class="icon-btn" id="sortBtn" title="순서 편집">↕︎</button>
+    <button class="icon-btn" id="themeBtn" title="테마">🌓</button>
+    <button class="icon-btn" id="menuBtn" title="메뉴">⋯</button>
+  </header>
+
+  <div class="search"><span>🔍</span><input id="q" placeholder="앱 이름·설명·주소 검색" autocomplete="off"></div>
+  <div class="chips" id="chips"></div>
+  <div id="list"></div>
+</div>
+
+<button class="fab" id="addBtn">＋ 앱 추가</button>
+
+<!-- edit modal -->
+<div class="modal-bg" id="editBg">
+  <div class="modal">
+    <h2 id="editTitle">앱 추가</h2>
+    <div class="row">
+      <div class="field" style="flex:0 0 74px"><label>아이콘</label><input id="fEmoji" maxlength="4" style="text-align:center;font-size:20px"></div>
+      <div class="field"><label>이름 *</label><input id="fName" placeholder="예: 소화전 점검 지도"></div>
+    </div>
+    <div class="emoji-pick" id="emojiPick"></div>
+    <div class="field" style="margin-top:11px"><label>주소(URL) *</label><input id="fUrl" type="url" placeholder="https://rcntiger.github.io/..." inputmode="url"></div>
+    <div class="field"><label>설명</label><input id="fDesc" placeholder="한 줄 설명"></div>
+    <div class="row">
+      <div class="field"><label>분류</label><input id="fCat" list="catList" placeholder="예: 소방업무"><datalist id="catList"></datalist></div>
+      <div class="field"><label>상태</label>
+        <select id="fStatus"><option value="">운영중</option><option value="dev">개발중</option><option value="old">보관</option></select>
+      </div>
+    </div>
+    <div class="field"><label>GitHub 저장소 (선택)</label><input id="fRepo" placeholder="예: rcntiger/119hyd-Map2"></div>
+    <div class="btns">
+      <button class="danger" id="delBtn">삭제</button>
+      <button id="cancelBtn">취소</button>
+      <button class="primary" id="saveBtn">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- menu modal -->
+<div class="modal-bg" id="menuBg">
+  <div class="modal">
+    <h2>메뉴</h2>
+    <div class="menu-list">
+      <button id="mExport">📤 백업 (JSON 복사/저장)</button>
+      <button id="mImport">📥 복원 (JSON 붙여넣기)</button>
+      <button id="mReset">↺ 기본 목록으로 초기화</button>
+    </div>
+    <p class="hint">목록은 이 브라우저에 저장됩니다. 다른 기기에서 쓰려면 백업 JSON을 복사해 그 기기에서 복원하세요.</p>
+    <div class="btns"><button id="menuClose">닫기</button></div>
+  </div>
+</div>
+
+<!-- json modal -->
+<div class="modal-bg" id="jsonBg">
+  <div class="modal">
+    <h2 id="jsonTitle">백업</h2>
+    <div class="field"><textarea id="jsonBox" spellcheck="false"></textarea></div>
+    <p class="hint" id="jsonHint"></p>
+    <div class="btns" id="jsonBtns"></div>
+  </div>
+</div>
+
+<!-- sync modal -->
+<div class="modal-bg" id="syncBg">
+  <div class="modal">
+    <h2>☁️ 기기 간 동기화</h2>
+    <div class="sync-state" id="syncState"></div>
+
+    <div id="keyStep" style="display:none">
+      <div class="field"><label>Supabase anon key (personal-apps)</label><input id="sKey" placeholder="eyJhbGciOi..."></div>
+      <p class="hint">Supabase 대시보드 → Project Settings → API의 <b>anon public</b> 키. 이 기기에 한 번만 입력하면 됩니다.</p>
+      <div class="btns"><button id="keyClose">닫기</button><button class="primary" id="keySave">저장</button></div>
+    </div>
+
+    <div id="loginStep" style="display:none">
+      <div class="field"><label>이메일</label><input id="sEmail" type="email" placeholder="you@example.com" autocomplete="email"></div>
+      <div class="field" id="codeField" style="display:none"><label>메일로 받은 6자리 코드</label><input id="sCode" inputmode="numeric" maxlength="6" placeholder="123456" autocomplete="one-time-code"></div>
+      <div class="btns"><button id="loginClose">닫기</button><button class="primary" id="loginNext">코드 받기</button></div>
+    </div>
+
+    <div id="userStep" style="display:none">
+      <div class="btns"><button class="danger" id="logoutBtn">로그아웃</button><button id="userClose">닫기</button><button class="primary" id="syncNow">지금 동기화</button></div>
+    </div>
+  </div>
+</div>
+
+<!-- confirm modal -->
+<div class="modal-bg" id="confBg">
+  <div class="modal">
+    <h2 id="confMsg">확인</h2>
+    <div class="btns"><button id="confNo">취소</button><button class="primary" id="confYes">확인</button></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+const KEY='rcn_applinks_v1', TS_KEY='rcn_applinks_ts', THEME_KEY='rcn_applinks_theme', SBKEY_KEY='rcn_applinks_sbkey';
+/* ── Supabase (personal-apps) ── anon key를 여기에 넣으면 기기마다 입력할 필요가 없습니다 */
+const SB_URL='https://rcwneqlwzfplvrihvzyu.supabase.co';
+const SB_ANON_KEY='';
+const TABLE='applinks';
+const DEFAULTS=[
+  {emoji:'🚒',name:'소화전 점검 지도',url:'https://rcntiger.github.io/119hyd-Map2/',desc:'소화전·비상소화장치 점검, 폐전·노후 표시, 인쇄',cat:'소방업무',repo:'rcntiger/119hyd-Map2',fav:true},
+  {emoji:'🗺️',name:'현장 확인 점검 Map',url:'https://rcntiger.github.io/field-check/',desc:'현장점검 지도 (카카오맵·사진·엑셀)',cat:'소방업무',status:'dev',repo:'rcntiger/field-check'},
+  {emoji:'💰',name:'리밸런서',url:'https://rcntiger.github.io/rebalancer/',desc:'주식 포트폴리오 리밸런싱 (KIS 연동)',cat:'개인',repo:'rcntiger/rebalancer',fav:true},
+  {emoji:'📅',name:'언제모여',url:'https://rcntiger.github.io/moim/',desc:'모임 날짜 정하기·모임 기록',cat:'개인'},
+  {emoji:'📜',name:'한능검 학습노트',url:'https://rcntiger.github.io/hanguksa-notes/',desc:'한국사 시대별 노트·모의고사 10회',cat:'학습',repo:'rcntiger/hanguksa-notes'},
+  {emoji:'🦺',name:'산업안전기사 압축노트',url:'https://rcntiger.github.io/safety-notes2/',desc:'필기 대비 압축본 노트',cat:'학습',repo:'rcntiger/safety-notes2'},
+  {emoji:'📘',name:'산업안전기사 CISE-study',url:'https://rcntiger.github.io/CISE-study/',desc:'산업안전기사 학습노트',cat:'학습',repo:'rcntiger/CISE-study'},
+  {emoji:'🧩',name:'공통 JS 라이브러리',url:'https://rcntiger.github.io/common/',desc:'logger·supabase·kakao·excel 등 공통 모듈',cat:'개발'}
+];
+const EMOJIS=['🚒','🧯','🗺️','📍','💧','🏢','📋','📊','☕','👥','🗓️','📅','💰','📈','📜','📘','🦺','🎓','🧩','⚙️','🔧','🏃','🎣','⛺','🎧','🏠','⭐','🔗'];
+
+let apps=[], localTs=0, cat='전체', sortMode=false, editIdx=-1;
+
+function ls(k,v){try{if(v===undefined)return localStorage.getItem(k);if(v===null)localStorage.removeItem(k);else localStorage.setItem(k,v)}catch(e){return null}}
+function load(){
+  try{const s=ls(KEY);if(s){localTs=+ls(TS_KEY)||0;return JSON.parse(s)}}catch(e){}
+  localTs=0; // 기본 목록: 서버에 데이터가 있으면 서버가 우선
+  return DEFAULTS.map((a,i)=>({...a,id:uid(),order:i}));
+}
+function persist(){ls(KEY,JSON.stringify(apps));ls(TS_KEY,String(localTs))}
+function save(){localTs=Date.now();persist();schedulePush()}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function host(u){try{const x=new URL(u);return x.host+x.pathname.replace(/\/$/,'')}catch(e){return u}}
+const $=id=>document.getElementById(id);
+function toast(m){const t=$('toast');t.textContent=m;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),1800)}
+function open(id){$(id).classList.add('show')}
+function close(id){$(id).classList.remove('show')}
+function confirmBox(msg,fn){$('confMsg').textContent=msg;open('confBg');$('confYes').onclick=()=>{close('confBg');fn()};$('confNo').onclick=()=>close('confBg')}
+
+function cats(){const s=[];apps.forEach(a=>{const c=a.cat||'기타';if(!s.includes(c))s.push(c)});return s}
+
+function render(){
+  apps.sort((a,b)=>a.order-b.order);
+  const q=$('q').value.trim().toLowerCase();
+  const cs=cats();
+  if(cat!=='전체'&&cat!=='★ 즐겨찾기'&&!cs.includes(cat))cat='전체';
+  $('chips').innerHTML=['전체','★ 즐겨찾기',...cs].map(c=>`<button class="chip ${c===cat?'on':''}" data-c="${esc(c)}">${esc(c)}</button>`).join('');
+  $('catList').innerHTML=cs.map(c=>`<option value="${esc(c)}">`).join('');
+  $('count').textContent=`앱 ${apps.length}개`;
+
+  let list=apps.filter(a=>{
+    if(cat==='★ 즐겨찾기'&&!a.fav)return false;
+    if(cat!=='전체'&&cat!=='★ 즐겨찾기'&&(a.cat||'기타')!==cat)return false;
+    if(q&&!(`${a.name} ${a.desc} ${a.url} ${a.cat} ${a.repo}`.toLowerCase().includes(q)))return false;
+    return true;
+  });
+
+  const box=$('list');
+  document.body.classList.toggle('sortmode',sortMode);
+  if(!list.length){box.innerHTML=`<div class="empty">${apps.length?'검색 결과가 없어요':'아직 등록된 앱이 없어요.<br>아래 ＋ 버튼으로 추가하세요.'}</div>`;return}
+
+  let html='';
+  if(cat==='전체'&&!q&&!sortMode){
+    const favs=list.filter(a=>a.fav);
+    if(favs.length)html+=`<div class="section-title">★ 즐겨찾기</div><div class="grid">${favs.map(card).join('')}</div>`;
+    cs.forEach(c=>{const g=list.filter(a=>(a.cat||'기타')===c&&!a.fav);if(g.length)html+=`<div class="section-title">${esc(c)} · ${g.length}</div><div class="grid">${g.map(card).join('')}</div>`});
+  }else{
+    html=`<div class="grid">${list.map(card).join('')}</div>`;
+  }
+  box.innerHTML=html;
+}
+
+function card(a){
+  const badge=a.status==='dev'?'<span class="badge dev">개발중</span>':a.status==='old'?'<span class="badge">보관</span>':'';
+  const acts=sortMode
+    ?`<button data-act="up" data-id="${a.id}" title="위로">▲</button><button data-act="down" data-id="${a.id}" title="아래로">▼</button>`
+    :`<button class="star ${a.fav?'on':''}" data-act="fav" data-id="${a.id}" title="즐겨찾기">${a.fav?'★':'☆'}</button><button data-act="copy" data-id="${a.id}" title="주소 복사">⧉</button><button data-act="edit" data-id="${a.id}" title="편집">✎</button>`;
+  return `<div class="card" style="${a.status==='old'?'opacity:.6':''}">
+    <a class="main" href="${esc(a.url)}" target="_blank" rel="noopener" data-hit="${a.id}">
+      <div class="emoji">${esc(a.emoji||'🔗')}</div>
+      <div class="info">
+        <div class="name">${esc(a.name)}${badge}</div>
+        ${a.desc?`<div class="desc">${esc(a.desc)}</div>`:''}
+        <div class="url">${esc(host(a.url))}</div>
+      </div>
+    </a>
+    <div class="acts">${acts}</div>
+  </div>`;
+}
+
+function byId(id){return apps.find(a=>a.id===id)}
+
+document.addEventListener('click',e=>{
+  const chip=e.target.closest('.chip');
+  if(chip){cat=chip.dataset.c;render();return}
+  const hit=e.target.closest('[data-hit]');
+  if(hit){if(sortMode)e.preventDefault();return}
+  const b=e.target.closest('[data-act]');if(!b)return;
+  const a=byId(b.dataset.id);if(!a)return;
+  const act=b.dataset.act;
+  if(act==='fav'){a.fav=!a.fav;save();render()}
+  else if(act==='edit'){openEdit(a)}
+  else if(act==='copy'){
+    navigator.clipboard.writeText(a.url).then(()=>toast('주소를 복사했어요')).catch(()=>toast(a.url));
+  }
+  else if(act==='up'||act==='down'){
+    const i=apps.indexOf(a),j=act==='up'?i-1:i+1;
+    if(j<0||j>=apps.length)return;
+    [apps[i].order,apps[j].order]=[apps[j].order,apps[i].order];save();render();
+  }
+});
+
+$('q').addEventListener('input',render);
+
+// edit
+$('emojiPick').innerHTML=EMOJIS.map(e=>`<button type="button">${e}</button>`).join('');
+$('emojiPick').addEventListener('click',e=>{if(e.target.tagName==='BUTTON')$('fEmoji').value=e.target.textContent});
+function openEdit(a){
+  editIdx=a?a.id:-1;
+  $('editTitle').textContent=a?'앱 편집':'앱 추가';
+  $('fEmoji').value=a?.emoji||'🔗';$('fName').value=a?.name||'';$('fUrl').value=a?.url||'';
+  $('fDesc').value=a?.desc||'';$('fCat').value=a?.cat||(cat!=='전체'&&cat!=='★ 즐겨찾기'?cat:'');
+  $('fStatus').value=a?.status||'';$('fRepo').value=a?.repo||'';
+  $('delBtn').style.display=a?'':'none';
+  open('editBg');setTimeout(()=>$('fName').focus(),50);
+}
+$('addBtn').onclick=()=>openEdit(null);
+$('cancelBtn').onclick=()=>close('editBg');
+$('saveBtn').onclick=()=>{
+  const name=$('fName').value.trim();let url=$('fUrl').value.trim();
+  if(!name){toast('이름을 입력하세요');return}
+  if(!url){toast('주소를 입력하세요');return}
+  if(!/^https?:\/\//i.test(url))url='https://'+url;
+  const d={emoji:$('fEmoji').value.trim()||'🔗',name,url,desc:$('fDesc').value.trim(),cat:$('fCat').value.trim()||'기타',status:$('fStatus').value,repo:$('fRepo').value.trim()};
+  if(editIdx!==-1){Object.assign(byId(editIdx),d)}
+  else{apps.push({...d,id:uid(),order:Math.max(-1,...apps.map(a=>a.order))+1,fav:false})}
+  save();close('editBg');render();toast('저장했어요');
+};
+$('delBtn').onclick=()=>{
+  const a=byId(editIdx);
+  confirmBox(`'${a.name}' 을(를) 삭제할까요?`,()=>{apps=apps.filter(x=>x.id!==editIdx);save();close('editBg');render();toast('삭제했어요')});
+};
+
+// sort / theme
+$('sortBtn').onclick=()=>{sortMode=!sortMode;if(sortMode){cat='전체';$('q').value=''}$('sortBtn').style.background=sortMode?'var(--accent-soft)':'';render();toast(sortMode?'순서 편집: ▲▼로 이동, 다시 누르면 완료':'순서 저장 완료')};
+function setTheme(t){document.documentElement.dataset.theme=t;try{localStorage.setItem(THEME_KEY,t)}catch(e){}}
+let th='light';try{th=localStorage.getItem(THEME_KEY)||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light')}catch(e){}
+setTheme(th);
+$('themeBtn').onclick=()=>setTheme(document.documentElement.dataset.theme==='dark'?'light':'dark');
+
+// menu
+$('menuBtn').onclick=()=>open('menuBg');
+$('menuClose').onclick=()=>close('menuBg');
+$('mExport').onclick=()=>{
+  close('menuBg');
+  const data=JSON.stringify(apps.map(({id,...r})=>r),null,1);
+  $('jsonTitle').textContent='백업';$('jsonBox').value=data;$('jsonBox').readOnly=true;
+  $('jsonHint').textContent='복사해서 메모·카톡 등에 보관하거나, 다른 기기의 [복원]에 붙여넣으세요.';
+  $('jsonBtns').innerHTML='<button id="jClose">닫기</button><button id="jDown">파일 저장</button><button class="primary" id="jCopy">복사</button>';
+  $('jClose').onclick=()=>close('jsonBg');
+  $('jCopy').onclick=()=>navigator.clipboard.writeText(data).then(()=>toast('복사했어요')).catch(()=>{$('jsonBox').select();toast('직접 선택해 복사하세요')});
+  $('jDown').onclick=()=>{try{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([data],{type:'application/json'}));a.download='applinks_backup.json';a.click()}catch(e){toast('이 화면에선 저장이 안 돼요. 복사를 쓰세요')}};
+  open('jsonBg');
+};
+$('mImport').onclick=()=>{
+  close('menuBg');
+  $('jsonTitle').textContent='복원';$('jsonBox').value='';$('jsonBox').readOnly=false;
+  $('jsonHint').textContent='백업 JSON을 붙여넣으세요. [합치기]는 같은 주소를 건너뛰고 추가, [바꾸기]는 전체 교체입니다.';
+  $('jsonBtns').innerHTML='<button id="jClose">취소</button><button id="jMerge">합치기</button><button class="primary" id="jReplace">바꾸기</button>';
+  $('jClose').onclick=()=>close('jsonBg');
+  const parse=()=>{try{const d=JSON.parse($('jsonBox').value);if(!Array.isArray(d))throw 0;return d.filter(x=>x&&x.name&&x.url)}catch(e){toast('JSON 형식이 올바르지 않아요');return null}};
+  $('jMerge').onclick=()=>{const d=parse();if(!d)return;let n=0,o=Math.max(-1,...apps.map(a=>a.order));d.forEach(x=>{if(!apps.some(a=>a.url===x.url)){apps.push({...x,id:uid(),order:++o});n++}});save();close('jsonBg');render();toast(`${n}개 추가했어요`)};
+  $('jReplace').onclick=()=>{const d=parse();if(!d)return;confirmBox(`현재 목록을 ${d.length}개 항목으로 바꿀까요?`,()=>{apps=d.map((x,i)=>({...x,id:uid(),order:i}));save();close('jsonBg');render();toast('복원했어요')})};
+  open('jsonBg');setTimeout(()=>$('jsonBox').focus(),50);
+};
+$('mReset').onclick=()=>{close('menuBg');confirmBox('기본 목록으로 초기화할까요? 추가한 앱은 사라집니다.'+(user?' (동기화된 다른 기기에도 반영돼요)':''),()=>{apps=DEFAULTS.map((a,i)=>({...a,id:uid(),order:i}));save();render();toast('초기화했어요')})};
+
+/* ───────── Supabase 동기화 ───────── */
+let sb=null, user=null, pushTimer=null, syncing=false, lastSync=0, syncErr='', otpEmail='';
+function setDot(s){$('syncDot').className='dot '+(s||'')}
+function anonKey(){return SB_ANON_KEY||ls(SBKEY_KEY)||''}
+function initSb(){
+  if(sb)return true;
+  if(!window.supabase||!anonKey())return false;
+  try{sb=window.supabase.createClient(SB_URL,anonKey(),{auth:{persistSession:true,autoRefreshToken:true}})}catch(e){syncErr=e.message;return false}
+  sb.auth.onAuthStateChange((ev,session)=>{
+    const was=user&&user.id;user=session?session.user:null;
+    if(user&&user.id!==was)pull();
+    if(!user)setDot('');
+    if($('syncBg').classList.contains('show'))renderSync();
+  });
+  return true;
+}
+function clean(){return apps.map(({id,emoji,name,url,desc,cat,status,repo,fav,order})=>({id,emoji,name,url,desc,cat,status,repo,fav,order}))}
+
+async function pull(){
+  if(!sb||!user||syncing)return;
+  syncing=true;setDot('busy');
+  try{
+    const {data,error}=await sb.from(TABLE).select('data,updated_at').eq('user_id',user.id).maybeSingle();
+    if(error)throw error;
+    const remoteTs=data?Date.parse(data.updated_at):0;
+    if(data&&Array.isArray(data.data)&&remoteTs>localTs){
+      apps=data.data;localTs=remoteTs;persist();render();
+    }else if(!data||localTs>remoteTs){
+      syncing=false;await push();return;
+    }
+    lastSync=Date.now();syncErr='';setDot('ok');
+  }catch(e){syncErr=e.message||String(e);setDot('err')}
+  syncing=false;
+  if($('syncBg').classList.contains('show'))renderSync();
+}
+async function push(){
+  if(!sb||!user)return;
+  clearTimeout(pushTimer);setDot('busy');
+  try{
+    if(!localTs)localTs=Date.now(),persist();
+    const {error}=await sb.from(TABLE).upsert({user_id:user.id,data:clean(),updated_at:new Date(localTs).toISOString()});
+    if(error)throw error;
+    lastSync=Date.now();syncErr='';setDot('ok');
+  }catch(e){syncErr=e.message||String(e);setDot('err')}
+  if($('syncBg').classList.contains('show'))renderSync();
+}
+function schedulePush(){if(!user)return;clearTimeout(pushTimer);setDot('busy');pushTimer=setTimeout(push,800)}
+
+function renderSync(){
+  ['keyStep','loginStep','userStep'].forEach(id=>$(id).style.display='none');
+  const st=$('syncState');
+  if(!window.supabase){st.innerHTML='Supabase 라이브러리를 불러오지 못했어요. 인터넷 연결을 확인하세요.';return}
+  if(!anonKey()){st.innerHTML='처음 한 번 <b>Supabase 키</b> 입력이 필요해요.';$('keyStep').style.display='';$('sKey').value='';return}
+  if(!user){
+    st.innerHTML='로그인하면 PC·휴대폰 등 모든 기기에서 <b>같은 목록</b>을 씁니다.<br>리밸런서와 같은 계정(이메일)으로 로그인하면 돼요.';
+    $('loginStep').style.display='';$('codeField').style.display=otpEmail?'':'none';
+    $('sEmail').value=otpEmail||$('sEmail').value;$('loginNext').textContent=otpEmail?'로그인':'코드 받기';
+    return;
+  }
+  const t=lastSync?new Date(lastSync).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'}):'-';
+  st.innerHTML=`<b>${esc(user.email)}</b> 로그인됨<br>${syncErr?`<span style="color:#e03b3b">오류: ${esc(syncErr)}</span>`:`마지막 동기화 ${t} · 앱 ${apps.length}개`}`;
+  $('userStep').style.display='';
+}
+$('syncBtn').onclick=()=>{initSb();renderSync();open('syncBg')};
+['keyClose','loginClose','userClose'].forEach(id=>$(id).onclick=()=>close('syncBg'));
+$('keySave').onclick=()=>{
+  const k=$('sKey').value.trim();if(k.length<30){toast('키를 확인하세요');return}
+  ls(SBKEY_KEY,k);if(!initSb()){toast('연결 실패: '+syncErr);return}
+  renderSync();toast('키를 저장했어요');
+};
+$('loginNext').onclick=async()=>{
+  const btn=$('loginNext');
+  if(!otpEmail){
+    const email=$('sEmail').value.trim();
+    if(!/^\S+@\S+\.\S+$/.test(email)){toast('이메일을 확인하세요');return}
+    btn.disabled=true;btn.textContent='보내는 중…';
+    const {error}=await sb.auth.signInWithOtp({email,options:{shouldCreateUser:true}});
+    btn.disabled=false;
+    if(error){toast('전송 실패: '+error.message);renderSync();return}
+    otpEmail=email;renderSync();toast('메일로 코드를 보냈어요');setTimeout(()=>$('sCode').focus(),50);
+  }else{
+    const token=$('sCode').value.trim();
+    if(!/^\d{6}$/.test(token)){toast('6자리 코드를 입력하세요');return}
+    btn.disabled=true;btn.textContent='확인 중…';
+    const {error}=await sb.auth.verifyOtp({email:otpEmail,token,type:'email'});
+    btn.disabled=false;
+    if(error){toast('코드가 맞지 않아요');renderSync();return}
+    otpEmail='';$('sCode').value='';toast('로그인했어요');
+  }
+};
+$('syncNow').onclick=()=>pull();
+$('logoutBtn').onclick=()=>confirmBox('로그아웃할까요? 이 기기의 목록은 그대로 남아요.',async()=>{await sb.auth.signOut();user=null;setDot('');renderSync()});
+
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')pull()});
+
+document.querySelectorAll('.modal-bg').forEach(bg=>bg.addEventListener('click',e=>{if(e.target===bg)bg.classList.remove('show')}));
+document.addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelectorAll('.modal-bg.show').forEach(b=>b.classList.remove('show'));if(e.key==='Enter'&&$('editBg').classList.contains('show')&&e.target.tagName==='INPUT')$('saveBtn').click()});
+
+apps=load();persist();render();
+if(initSb())sb.auth.getSession().then(({data})=>{user=data.session?data.session.user:null;if(user)pull()});
+})();
+</script>
+</body>
+</html>
