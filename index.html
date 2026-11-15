@@ -238,8 +238,18 @@ const DEFAULTS=[
   {emoji:'📜',name:'한능검 학습노트',url:'https://rcntiger.github.io/hanguksa-notes/',desc:'한국사 시대별 노트·모의고사 10회',cat:'학습',repo:'rcntiger/hanguksa-notes'},
   {emoji:'🦺',name:'산업안전기사 압축노트',url:'https://rcntiger.github.io/safety-notes2/',desc:'필기 대비 압축본 노트',cat:'학습',repo:'rcntiger/safety-notes2'},
   {emoji:'📘',name:'산업안전기사 CISE-study',url:'https://rcntiger.github.io/CISE-study/',desc:'산업안전기사 학습노트',cat:'학습',repo:'rcntiger/CISE-study'},
-  {emoji:'🧩',name:'공통 JS 라이브러리',url:'https://rcntiger.github.io/common/',desc:'logger·supabase·kakao·excel 등 공통 모듈',cat:'개발'}
+  {emoji:'🧩',name:'공통 JS 라이브러리',url:'https://rcntiger.github.io/common/',desc:'logger·supabase·kakao·excel 등 공통 모듈',cat:'개발'},
+  {emoji:'⏱️',name:'초과근무수당 계산기',url:'https://rcntiger.github.io/OvertimePay/',desc:'초과근무수당 계산',cat:'소방업무',repo:'rcntiger/OvertimePay'},
+  {emoji:'☕',name:'커피 주문',url:'https://rcntiger.github.io/coffee_order/',desc:'직원 음료 주문 취합',cat:'소방업무',repo:'rcntiger/coffee_order'},
+  {emoji:'🏢',name:'아파트 점검 지도',url:'https://rcntiger.github.io/apt_check/',desc:'독산동·가산동 아파트 점검',cat:'소방업무',repo:'rcntiger/apt_check'},
+  {emoji:'📋',name:'업무 배분',url:'https://rcntiger.github.io/work-div/',desc:'엑셀 업무를 팀원에게 배분',cat:'소방업무',repo:'rcntiger/work-div'},
+  {emoji:'🔍',name:'대상물 크로스 체크',url:'https://rcntiger.github.io/cross-check/',desc:'부서별 대상물 중복 대조·팀 배분 (PC용)',cat:'소방업무',repo:'rcntiger/cross-check'},
+  {emoji:'📈',name:'삼성 PBR 추적',url:'https://rcntiger.github.io/samsung-pbr/',desc:'삼성전자 PBR 추적',cat:'개인',repo:'rcntiger/samsung-pbr'},
+  {emoji:'🇬🇧',name:'지텔프 핵심노트',url:'https://rcntiger.github.io/gtelp-notes/',desc:'G-TELP Level 2 문법·청취·독해',cat:'학습',repo:'rcntiger/gtelp-notes'}
 ];
+/* 처음 배포(v1) 때 기본 목록 — 이미 쓰던 기기에서 지운 앱이 되살아나지 않도록 기준으로 씀 */
+const V1_URLS=['119hyd-Map2','field-check','rebalancer','moim','hanguksa-notes','safety-notes2','CISE-study','common'].map(x=>`https://rcntiger.github.io/${x}/`);
+const SEEN_KEY='rcn_applinks_seen';
 const EMOJIS=['🚒','🧯','🗺️','📍','💧','🏢','📋','📊','☕','👥','🗓️','📅','💰','📈','📜','📘','🦺','🎓','🧩','⚙️','🔧','🏃','🎣','⛺','🎧','🏠','⭐','🔗'];
 
 let apps=[], localTs=0, cat='전체', sortMode=false, editIdx=-1;
@@ -249,6 +259,17 @@ function load(){
   try{const s=ls(KEY);if(s){localTs=+ls(TS_KEY)||0;return JSON.parse(s)}}catch(e){}
   localTs=0; // 기본 목록: 서버에 데이터가 있으면 서버가 우선
   return DEFAULTS.map((a,i)=>({...a,id:uid(),order:i}));
+}
+const normUrl=u=>String(u||'').toLowerCase().replace(/\/+$/,'');
+// 새로 추가된 기본 앱을 기존 목록에 한 번만 끼워 넣음 (사용자가 지운 앱은 다시 넣지 않음)
+function mergeDefaults(){
+  let seen;try{seen=JSON.parse(ls(SEEN_KEY)||'null')}catch(e){}
+  if(!Array.isArray(seen))seen=V1_URLS;
+  const seenN=seen.map(normUrl), have=apps.map(a=>normUrl(a.url));
+  let o=Math.max(-1,...apps.map(a=>a.order)), added=0;
+  DEFAULTS.forEach(d=>{const u=normUrl(d.url);if(!seenN.includes(u)&&!have.includes(u)){apps.push({...d,id:uid(),order:++o});added++}});
+  ls(SEEN_KEY,JSON.stringify(DEFAULTS.map(d=>d.url)));
+  return added;
 }
 function persist(){ls(KEY,JSON.stringify(apps));ls(TS_KEY,String(localTs))}
 function save(){localTs=Date.now();persist();schedulePush()}
@@ -556,7 +577,7 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 document.querySelectorAll('.modal-bg').forEach(bg=>bg.addEventListener('click',e=>{if(e.target===bg)bg.classList.remove('show')}));
 document.addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelectorAll('.modal-bg.show').forEach(b=>b.classList.remove('show'));if(e.key==='Enter'&&$('editBg').classList.contains('show')&&e.target.tagName==='INPUT')$('saveBtn').click()});
 
-apps=load();persist();render();
+apps=load();if(ls(KEY)&&mergeDefaults()){save()}else{ls(SEEN_KEY,JSON.stringify(DEFAULTS.map(d=>d.url)))}persist();render();
 if(initSb())sb.auth.getSession().then(({data})=>{user=data.session?data.session.user:null;if(user)pull()});
 })();
 </script>
