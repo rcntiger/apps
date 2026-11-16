@@ -85,6 +85,14 @@ header h1 small{display:block;font-size:calc(12px*var(--fs));color:var(--sub);fo
 .dot.ok{background:#22a35a}.dot.busy{background:#f0a400}.dot.err{background:#e03b3b}
 .sync-state{background:var(--bg);border-radius:10px;padding:12px;font-size:calc(14px*var(--fs));margin-bottom:12px;line-height:1.55}
 .sync-state b{font-weight:650}
+.bk-list{display:flex;flex-direction:column;gap:6px;max-height:46vh;overflow:auto;margin-top:12px}
+.bk{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:10px;padding:10px 10px 10px 12px;background:var(--bg)}
+.bk .t{flex:1;min-width:0}
+.bk .t b{display:block;font-size:calc(14px*var(--fs))}
+.bk .t span{font-size:calc(12px*var(--fs));color:var(--sub)}
+.bk button{border:1px solid var(--line);background:var(--card);border-radius:8px;padding:7px 10px;font-size:calc(13px*var(--fs));font-weight:600}
+.bk button.r{color:var(--accent);border-color:var(--accent)}
+.bk .tag{font-size:calc(10.5px*var(--fs));background:var(--chip);color:var(--sub);border-radius:5px;padding:1px 5px;margin-left:4px;font-weight:600}
 .seg{display:flex;background:var(--bg);border:1px solid var(--line);border-radius:11px;padding:3px;gap:3px}
 .seg button{flex:1;border:none;background:none;border-radius:8px;padding:9px 0;color:var(--sub);font-weight:600}
 .seg button.on{background:var(--card);color:var(--accent);box-shadow:0 1px 3px rgba(0,0,0,.12)}
@@ -145,6 +153,7 @@ header h1 small{display:block;font-size:calc(12px*var(--fs));color:var(--sub);fo
     <div class="menu-list">
       <button id="mInstall">📲 앱으로 설치</button>
       <button id="mFont">🔤 글자 크기·폰트</button>
+      <button id="mCloud">☁️ 클라우드 백업·복원</button>
       <button id="mExport">📤 백업 (JSON 복사/저장)</button>
       <button id="mImport">📥 복원 (JSON 붙여넣기)</button>
       <button id="mReset">↺ 기본 목록으로 초기화</button>
@@ -161,6 +170,20 @@ header h1 small{display:block;font-size:calc(12px*var(--fs));color:var(--sub);fo
     <div class="field"><textarea id="jsonBox" spellcheck="false"></textarea></div>
     <p class="hint" id="jsonHint"></p>
     <div class="btns" id="jsonBtns"></div>
+  </div>
+</div>
+
+<!-- cloud backup modal -->
+<div class="modal-bg" id="cloudBg">
+  <div class="modal">
+    <h2>☁️ 클라우드 백업·복원</h2>
+    <div class="row" style="align-items:flex-end">
+      <div class="field" style="margin:0"><label>백업 이름 (선택)</label><input id="bkLabel" placeholder="예: 앱 정리 전"></div>
+      <button class="primary" id="bkNow" style="flex:0 0 auto;padding:10px 16px;border-radius:10px;border:none;background:var(--accent);color:#fff;font-weight:600">지금 백업</button>
+    </div>
+    <div class="bk-list" id="bkList"></div>
+    <p class="hint">하루 한 번 자동 백업(최근 30개 보관)되고, 복원하기 직전 상태도 자동으로 백업돼요. 복원하면 모든 기기에 반영됩니다.</p>
+    <div class="btns"><button id="cloudClose">닫기</button></div>
   </div>
 </div>
 
@@ -509,7 +532,7 @@ async function pull(){
     }else if(!data||localTs>remoteTs){
       syncing=false;await push();return;
     }
-    lastSync=Date.now();syncErr='';setDot('ok');
+    lastSync=Date.now();syncErr='';setDot('ok');autoBackup();
   }catch(e){syncErr=e.message||String(e);setDot('err')}
   syncing=false;
   if($('syncBg').classList.contains('show'))renderSync();
@@ -573,6 +596,67 @@ $('syncNow').onclick=()=>pull();
 $('logoutBtn').onclick=()=>confirmBox('로그아웃할까요? 이 기기의 목록은 그대로 남아요.',async()=>{await sb.auth.signOut();user=null;setDot('');renderSync()});
 
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')pull()});
+
+/* ───────── 클라우드 백업·복원 ───────── */
+const BK='applinks_backups', AUTO_KEEP=30, AUTO_CHECK_KEY='rcn_applinks_autobk';
+const fmtDate=t=>{const d=new Date(t);return d.toLocaleDateString('ko-KR',{year:'2-digit',month:'2-digit',day:'2-digit'})+' '+d.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})};
+async function createBackup(label,auto){
+  const data=clean();
+  const {error}=await sb.from(BK).insert({user_id:user.id,label:label||'',auto:!!auto,count:data.length,data});
+  if(error)throw error;
+  if(auto){ // 오래된 자동 백업 정리
+    const {data:old}=await sb.from(BK).select('id').eq('user_id',user.id).eq('auto',true).order('created_at',{ascending:false}).range(AUTO_KEEP,AUTO_KEEP+100);
+    if(old&&old.length)await sb.from(BK).delete().in('id',old.map(x=>x.id));
+  }
+}
+async function autoBackup(){
+  if(!sb||!user)return;
+  const last=+ls(AUTO_CHECK_KEY)||0;if(Date.now()-last<12*3600e3)return;
+  try{
+    const {data}=await sb.from(BK).select('created_at').eq('user_id',user.id).eq('auto',true).order('created_at',{ascending:false}).limit(1);
+    if(!data||!data.length||Date.now()-Date.parse(data[0].created_at)>=24*3600e3)await createBackup('자동 백업',true);
+    ls(AUTO_CHECK_KEY,String(Date.now()));
+  }catch(e){}
+}
+async function loadBackups(){
+  const box=$('bkList');box.innerHTML='<div class="empty" style="padding:16px">불러오는 중…</div>';
+  const {data,error}=await sb.from(BK).select('id,label,auto,count,created_at').eq('user_id',user.id).order('created_at',{ascending:false}).limit(100);
+  if(error){box.innerHTML=`<div class="empty" style="padding:16px">불러오기 실패: ${esc(error.message)}<br><small>supabase_setup.sql의 백업 테이블을 만들었는지 확인하세요.</small></div>`;return}
+  if(!data.length){box.innerHTML='<div class="empty" style="padding:16px">아직 클라우드 백업이 없어요.</div>';return}
+  box.innerHTML=data.map(b=>`<div class="bk"><div class="t"><b>${esc(b.label||'수동 백업')}${b.auto?'<span class="tag">자동</span>':''}</b><span>${fmtDate(b.created_at)} · 앱 ${b.count}개</span></div><button class="r" data-restore="${b.id}">복원</button><button data-del="${b.id}">삭제</button></div>`).join('');
+}
+$('mCloud').onclick=()=>{
+  close('menuBg');
+  if(!initSb()||!user){toast('먼저 ☁️ 동기화에서 로그인하세요');renderSync();open('syncBg');return}
+  $('bkLabel').value='';open('cloudBg');loadBackups();
+};
+$('cloudClose').onclick=()=>close('cloudBg');
+$('bkNow').onclick=async()=>{
+  const btn=$('bkNow');btn.disabled=true;
+  try{await createBackup($('bkLabel').value.trim(),false);$('bkLabel').value='';toast('클라우드에 백업했어요');loadBackups()}
+  catch(e){toast('백업 실패: '+(e.message||e))}
+  btn.disabled=false;
+};
+$('bkList').onclick=e=>{
+  const r=e.target.closest('[data-restore]'), d=e.target.closest('[data-del]');
+  if(r){
+    const name=r.closest('.bk').querySelector('b').firstChild.textContent;
+    confirmBox(`'${name}' 시점으로 복원할까요? 현재 목록은 자동으로 백업해 둡니다.`,async()=>{
+      try{
+        const {data,error}=await sb.from(BK).select('data').eq('id',r.dataset.restore).single();
+        if(error)throw error;
+        await createBackup('복원 직전 상태',false);
+        apps=data.data.map((x,i)=>({...x,id:x.id||uid(),order:x.order??i}));save();render();
+        toast('복원했어요');loadBackups();
+      }catch(e){toast('복원 실패: '+(e.message||e))}
+    });
+  }else if(d){
+    confirmBox('이 백업을 삭제할까요?',async()=>{
+      const {error}=await sb.from(BK).delete().eq('id',d.dataset.del);
+      if(error)toast('삭제 실패: '+error.message);else{toast('삭제했어요');loadBackups()}
+    });
+  }
+};
 
 document.querySelectorAll('.modal-bg').forEach(bg=>bg.addEventListener('click',e=>{if(e.target===bg)bg.classList.remove('show')}));
 document.addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelectorAll('.modal-bg.show').forEach(b=>b.classList.remove('show'));if(e.key==='Enter'&&$('editBg').classList.contains('show')&&e.target.tagName==='INPUT')$('saveBtn').click()});
