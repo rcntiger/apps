@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>내 앱 런처</title>
 <link rel="manifest" href="manifest.webmanifest">
-<meta name="theme-color" content="#d6402b">
+<meta name="theme-color" content="#f4f5f7">
 <link rel="icon" type="image/png" href="icons/favicon-32.png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -415,7 +415,9 @@ $('delBtn').onclick=()=>{
 
 // sort / theme
 $('sortBtn').onclick=()=>{sortMode=!sortMode;if(sortMode){cat='전체';$('q').value=''}$('sortBtn').style.background=sortMode?'var(--accent-soft)':'';render();toast(sortMode?'순서 편집: ▲▼로 이동, 다시 누르면 완료':'순서 저장 완료')};
-function setTheme(t){document.documentElement.dataset.theme=t;try{localStorage.setItem(THEME_KEY,t)}catch(e){}}
+function setTheme(t){document.documentElement.dataset.theme=t;try{localStorage.setItem(THEME_KEY,t)}catch(e){}
+  // 상태바·다른 앱을 열 때 위아래 띠 색 = 배경색 (예전 주황색 대신)
+  const m=document.querySelector('meta[name=theme-color]');if(m)m.content=t==='dark'?'#14161a':'#f4f5f7';}
 let th='light';try{th=localStorage.getItem(THEME_KEY)||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light')}catch(e){}
 setTheme(th);
 $('themeBtn').onclick=()=>setTheme(document.documentElement.dataset.theme==='dark'?'light':'dark');
